@@ -1,6 +1,6 @@
 # microtesia.js
 
-[![Build Status](https://travis-ci.org/rgladwell/microtesia.js.svg?branch=master)](http://travis-ci.org/ricardo/microtesia.js)
+[![Build Status](https://travis-ci.org/rgladwell/microtesia.js.svg?branch=master)](https://travis-ci.org/rgladwell/microtesia.js)
 
 Small, fast microdata parsing library for browsers.
 
