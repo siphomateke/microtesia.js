@@ -1,0 +1,6 @@
+{
+  "name": "microtesia.js",
+  "version": "0.0.0",
+  "main": "lib/microtesia.js",
+  "ignore": ["*", "!dist/", "!dist/*"]
+}
