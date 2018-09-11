@@ -9,13 +9,11 @@
 var chai       = require('chai'),
     expect     = chai.expect,
     microtesia = require('../lib/microtesia.js'),
-    jsdom      = require('mocha-jsdom');
+    jsdom      = require('jsdom-global')();
 
 chai.use(require("chai-sorted"));
 
 describe('microtesia.js', function() {
-
-  jsdom();
 
   function html(fragment) {
     var html = document.createElement('div');
@@ -26,7 +24,7 @@ describe('microtesia.js', function() {
     } else {
       return html;
     }
-  } 
+  }
 
   it('should not parse non-microdata HTML', function() {
     var h = html('<div><p>My name is Elizabeth.</p></div>');

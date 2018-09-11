@@ -7,6 +7,12 @@ Small, fast microdata parsing library for browsers.
 To install execute:
 
 ```sh
+$ npm install microtesia.js --save
+```
+
+Or with bower:
+
+```sh
 $ bower install microtesia.js --save
 ```
 
