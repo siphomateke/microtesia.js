@@ -19,17 +19,6 @@ module.exports = function(grunt) {
         src: ['test/*.js']
       }
     },
-
-    watch: {
-      gruntfile: {
-        files: '<%= jshint.gruntfile.src %>',
-        tasks: ['jshint:gruntfile']
-      },
-      lib_test: {
-        files: '<%= jshint.lib_test.src %>',
-        tasks: ['jshint:lib_test', 'qunit']
-      }
-    }
   });
 
   grunt.registerTask('default', ['jshint', 'mochaTest']);
