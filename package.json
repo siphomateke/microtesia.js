@@ -1,6 +1,7 @@
 {
   "name": "microtesia.js",
   "version": "0.0.1",
+  "main": "lib/microtesia.js",
   "author": {
     "name": "Ricardo Gladwell"
   },
@@ -10,7 +11,6 @@
     "chai-sorted": "^0.2.0",
     "grunt": "~1.0.3",
     "grunt-cli": "^1.2.0",
-    "grunt-contrib-concat": "~1.0.1",
     "grunt-contrib-jshint": "~1.1.0",
     "grunt-contrib-watch": "~1.1.0",
     "grunt-mocha-test": "~0.13.3",
