@@ -43,7 +43,7 @@ describe('microtesia.js', function() {
     })
 
     it('return item name', function() {
-      expect(microtesia.parseMicrodata(h())).to.contain({ name: 'Elizabeth' });
+      expect(microtesia.parseMicrodata(h())).to.deep.include({ name: 'Elizabeth' });
     })
 
     it('not return item type', function() {
@@ -71,7 +71,7 @@ describe('microtesia.js', function() {
                     <p>My name is <span itemprop="name">E<strong>liz</strong>abeth</span>.</p>
                   </div>`);
 
-    expect(microtesia.parseMicrodata(h)).to.contain({ name: 'Elizabeth' });
+    expect(microtesia.parseMicrodata(h)).to.deep.include({ name: 'Elizabeth' });
   })
 
   describe('should parse microdata links', function() {
@@ -80,14 +80,14 @@ describe('microtesia.js', function() {
       var h = html(`<div itemscope>
                       <img itemprop="image" src="google-logo.png" alt="Google">
                     </div>`);
-      expect(microtesia.parseMicrodata(h)).to.contain({ image: 'google-logo.png' });
+      expect(microtesia.parseMicrodata(h)).to.deep.include({ image: 'google-logo.png' });
     })
 
     it('for hyperlink references', function() {
       var h = html(`<div itemscope>
                       <a itemprop="url" href="http://google.com">Google</a>
                     </div>`);
-      expect(microtesia.parseMicrodata(h)).to.contain({ url: 'http://google.com' });
+      expect(microtesia.parseMicrodata(h)).to.deep.include({ url: 'http://google.com' });
     })
 
   })
@@ -97,7 +97,7 @@ describe('microtesia.js', function() {
                     <data itemprop="product-id" value="9678AOU879">The Instigator 2000</data>
                   </h1>`);
 
-    expect(microtesia.parseMicrodata(h)).to.contain({ 'product-id': '9678AOU879' });
+    expect(microtesia.parseMicrodata(h)).to.deep.include({ 'product-id': '9678AOU879' });
   })
 
   it('parse numeric data', function() {
@@ -105,7 +105,7 @@ describe('microtesia.js', function() {
                     <meter itemprop="ratingValue" min=0 value=3.5 max=5>Rated 3.5/5</meter>
                   </h1>`);
 
-    expect(microtesia.parseMicrodata(h)).to.contain({ ratingValue: '3.5' });
+    expect(microtesia.parseMicrodata(h)).to.deep.include({ ratingValue: '3.5' });
   })
 
   it('should parse date- and time-related data', function() {
@@ -115,7 +115,7 @@ describe('microtesia.js', function() {
 
     var microdata = microtesia.parseMicrodata(h);
 
-    expect(microdata).to.contain({ birthday: '2009-05-10' });
+    expect(microdata).to.deep.include({ birthday: '2009-05-10' });
   })
 
   describe('should parse nested microdata item', function() {
@@ -230,7 +230,7 @@ describe('microtesia.js', function() {
     var microdata = microtesia.parseMicrodata('http://example.org/animals#cat', h);
 
     expect(microdata).to.have.lengthOf(1)
-      .and.contain({ _type: 'http://example.org/animals#cat' });
+      .and.deep.include({ _type: 'http://example.org/animals#cat' });
   })
 
   it('should parse complex microdata', function() {
@@ -267,6 +267,6 @@ describe('microtesia.js', function() {
 
     var microdata = microtesia.parseMicrodata(h);
 
-    expect(microdata).to.contain(expected);
+    expect(microdata).to.deep.include(expected);
   })
 })
