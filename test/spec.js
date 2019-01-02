@@ -9,21 +9,16 @@
 var chai       = require('chai'),
     expect     = chai.expect,
     microtesia = require('../lib/microtesia.js'),
-    jsdom      = require('jsdom-global')();
+    jsdom      = require('jsdom'),
+    { JSDOM }  = jsdom;
 
 chai.use(require("chai-sorted"));
 
 describe('microtesia.js', function() {
 
   function html(fragment) {
-    var html = document.createElement('div');
-    html.innerHTML = fragment;
-
-    if(html.childElementCount === 1){
-      return html.children[0];
-    } else {
-      return html;
-    }
+    var dom = new JSDOM(fragment);
+    return dom.window.document;
   }
 
   it('should not parse non-microdata HTML', function() {
@@ -269,4 +264,47 @@ describe('microtesia.js', function() {
 
     expect(microdata).to.deep.include(expected);
   })
+
+  it('should add properties from a single itemref', function() {
+    var h = html(`<div id="x">
+                   <p itemprop="a">1</p>
+                  </div>
+                  <div itemscope itemref="x">
+                   <p itemprop="b">test</p>
+                  </div>`);
+
+    var microdata = microtesia.parseMicrodata(h)[0];
+
+    expect(microdata).to.have.property('a').that.equals('1');
+  })
+
+  it('should add properties from multiple itemrefs', function() {
+    var h = html(`<div id="x">
+                   <p itemprop="a">1</p>
+                  </div>
+                  <div id="y">
+                   <p itemprop="c">2</p>
+                  </div>
+                  <div itemscope itemref="x y">
+                   <p itemprop="b">test</p>
+                  </div>`);
+
+    var microdata = microtesia.parseMicrodata(h)[0];
+
+    expect(microdata).to.have.property('c').that.equals('2');
+  })
+
+  it('should not fail for non-existent itemref', function() {
+    var h = html(`<div id="x">
+                   <p itemprop="a">1</p>
+                  </div>
+                  <div itemscope itemref="y">
+                   <p itemprop="b">test</p>
+                  </div>`);
+
+    var microdata = microtesia.parseMicrodata(h)[0];
+
+    expect(microdata).to.not.have.property('a').that.equals('1');
+  })
+
 })
