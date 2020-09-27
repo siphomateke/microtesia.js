@@ -18,7 +18,7 @@ describe('microtesia.js', function() {
 
   function html(fragment) {
     var dom = new JSDOM(fragment);
-    return dom.window.document;
+    return dom.window.document.documentElement;
   }
 
   it('should not parse non-microdata HTML', function() {
@@ -222,7 +222,7 @@ describe('microtesia.js', function() {
                     <h1 itemprop="name">Hedral</h1>
                   </section>`);
 
-    var microdata = microtesia.parseMicrodata('http://example.org/animals#cat', h);
+    var microdata = microtesia.parseMicrodata(h, 'http://example.org/animals#cat');
 
     expect(microdata).to.have.lengthOf(1)
       .and.deep.include({ _type: 'http://example.org/animals#cat' });

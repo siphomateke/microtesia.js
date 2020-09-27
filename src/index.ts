@@ -1,203 +1,178 @@
 /* Copyright (c) 2017, 2018 Ricardo Gladwell */
+/* Copyright (c) 2020 Sipho Mateke */
 
-(function(root, factory) {
-  'use strict';
-  if (typeof define === 'function' && define.amd) {
-    define([], factory);
-  } else {
-    if(root === undefined && window !== undefined) root = window;
-    root.parseMicrodata = factory();
-  }
-}(this, function() {
-  'use strict';
+export interface Microdata {
+  '_type'?: string;
+  [key: string]: Microdata | string | undefined;
+}
 
-  // TODO ES6: will not work on older browsers
-  class MicrodataItem {
+class MicrodataItem {
+  properties: Microdata = {};
 
-    constructor(node) {
-      if(node.attributes.itemtype) {
-        this._type = node.attributes.itemtype.value.trim();
-      }
+  constructor(node?: Element) {
+    if (node?.hasAttribute('itemtype')) {
+      // eslint-disable-next-line no-underscore-dangle
+      this.properties._type = node.getAttribute('itemtype')?.trim();
     }
-
-    addProperty(name, value) {
-      var oldProperty = this[name];
-      var p = {};
-
-      if(!oldProperty) {
-        p[name] = value;
-        return Object.assign(this, p);
-      } else if(Array.isArray(oldProperty)) {
-        p[name] = [value].concat(oldProperty);
-        return Object.assign(this, p);
-      } else {
-        p[name] = [value, oldProperty];
-        return Object.assign(this, p);
-      }
-    }
-
   }
 
-  Array.prototype.flatten = function() {
-    function flattener(a, b) {
-      return a.concat(Array.isArray(b) ? b.flatten() : b);
-    }
+  addProperty(name: string, value: unknown) {
+    const oldProperty = this.properties[name];
+    const p: Record<string, unknown> = {};
 
-    return this.reduce(flattener, []);
+    if (!oldProperty) {
+      p[name] = value;
+    } else if (Array.isArray(oldProperty)) {
+      p[name] = [value].concat(oldProperty);
+    } else {
+      p[name] = [value, oldProperty];
+    }
+    Object.assign(this.properties, p);
+    return this;
+  }
+
+  toJson(): Microdata {
+    return this.properties;
+  }
+}
+
+function toArray(nodeList?: NodeListOf<Element> | HTMLCollection) {
+  if (nodeList) {
+    return Array.from(nodeList);
+  }
+  return [];
+}
+
+interface ParsedProperty {
+  name: string;
+  value?: Microdata | string;
+}
+
+function parseProperty(property: Element) {
+  const p: ParsedProperty = {
+    name: '',
   };
-
-  function toArray(nodelist) {
-    if(nodelist) {
-      return Array.prototype.slice.call(nodelist);
-    } else {
-      return [];
-    }
+  const itemprop = property.getAttribute('itemprop');
+  if (itemprop) {
+    p.name = itemprop.trim();
   }
 
-  function parseProperty(property) {
-    var p = {};
-    p.name = property.attributes.itemprop.value.trim();
-
-    // TODO breaks OCP: split into separate functions
-    if(property.attributes.itemscope) {
-      p.value = parseItem(property);
-    } else if(property.attributes.href) {
-      p.value = property.attributes.href.value.trim();
-    } else if(property.attributes.src) {
-      p.value = property.attributes.src.value.trim();
-    } else if(property.tagName === "DATA" && property.attributes.value) {
-      p.value = property.attributes.value.value.trim();
-    } else if(property.tagName === "METER" && property.attributes.value) {
-      p.value = property.attributes.value.value.trim();
-    } else if(property.tagName === "TIME" && property.attributes.datetime) {
-      p.value = property.attributes.datetime.value.trim();
-    } else {
-      p.value = property.textContent.trim();
-    }
-
-    return p;
+  // TODO: [breaks OCP] split into separate functions
+  if (property.hasAttribute('itemscope')) {
+    p.value = parseItem(property);
+  } else if (property.hasAttribute('href')) {
+    p.value = property.getAttribute('href')?.trim();
+  } else if (property.hasAttribute('src')) {
+    p.value = property.getAttribute('src')?.trim();
+  } else if (property.tagName === 'DATA' && property.hasAttribute('value')) {
+    p.value = property.getAttribute('value')?.trim();
+  } else if (property.tagName === 'METER' && property.hasAttribute('value')) {
+    p.value = property.getAttribute('value')?.trim();
+  } else if (property.tagName === 'TIME' && property.hasAttribute('datetime')) {
+    p.value = property.getAttribute('datetime')?.trim();
+  } else {
+    p.value = property.textContent?.trim();
   }
 
-  function parseProperties(node, properties, item) {
-    var is = item || new MicrodataItem(node);
+  return p;
+}
 
-    if(properties.length === 0) {
-      return is;
-    } else {
-      var property = parseProperty(properties.pop());
-      var itemWithProperty = is.addProperty(property.name, property.value);
-      return parseProperties(undefined, properties, itemWithProperty);
-    }
+function parseProperties(properties: Element[], node?: Element, item?: MicrodataItem): Microdata {
+  const is: MicrodataItem = item || new MicrodataItem(node);
+
+  const lastProperty = properties.pop();
+  if (!lastProperty) {
+    return is.toJson();
+  }
+  const property = parseProperty(lastProperty);
+  const itemWithProperty = is.addProperty(property.name, property.value);
+  return parseProperties(properties, undefined, itemWithProperty);
+}
+
+function findProperties(nodes: Element[], properties: Element[] = []): Element[] {
+  function notItems(node: Element) {
+    return !node.hasAttribute('itemscope');
   }
 
-  function findProperties(nodes, properties) {
-
-    function notItems(node) {
-      return node.attributes !== undefined && node.attributes.itemscope === undefined;
-    }
-
-    function areProperties(node) {
-      return node.attributes !== undefined && node.attributes.itemprop !== undefined;
-    }
-
-    var ps = properties || [];
-
-    if(nodes.length === 0) {
-      return ps;
-    } else {
-
-      var children = nodes
-                       .map( function(node) { return toArray(node.children); } )
-                       .flatten();
-
-      var foundProperties = ps.concat(children.filter(areProperties));
-
-      return findProperties(children.filter(notItems), foundProperties);
-    }
-
+  function areProperties(node: Element) {
+    return node.hasAttribute('itemprop');
   }
 
-  function resolveReferences(node) {
-    if(node.attributes && node.attributes.itemref) {
-      return node
-        .attributes
-        .itemref
-        .value
-        .split(' ')
-        .map(function(id) {
-          const ref = node.ownerDocument.getElementById(id);
-
-          if(ref === undefined || ref === null) {
-            console.error('itemref not found for id "' + id + '"')
-          }
-
-          return ref;
-        })
-        .filter(function(ref) {
-          return ref !== undefined && ref !== null;
-        });
-    } else {
-      return [];
-    }
+  if (nodes.length === 0) {
+    return properties;
   }
 
-  function parseItem(node) {
-    var nodes = [node].concat(resolveReferences(node));
-    var properties = findProperties(nodes);
-    return parseProperties(node, properties);
-  }
+  const children = nodes
+    .map((node) => toArray(node.children))
+    .flat();
 
-  function areNotProperties(node) {
-    return node.attributes !== undefined && node.attributes.itemprop === undefined;
-  }
+  const foundProperties = properties.concat(children.filter(areProperties));
 
-  function findRootItems(node) {
-    var items = toArray(node.querySelectorAll('[itemscope]'));
+  return findProperties(children.filter(notItems), foundProperties);
+}
 
-    if(node.attributes && node.attributes.itemscope) {
-      items.push(node);
-    }
+function refIsValid(ref: Element | undefined | null): ref is Element {
+  return ref !== undefined && ref !== null;
+}
 
-    return items.filter(areNotProperties);
-  }
+function resolveReferences(node: Element): Element[] {
+  if (node.hasAttribute('itemref')) {
+    const refs = node.getAttribute('itemref')?.split(' ').map((id) => {
+      const ref = node.ownerDocument.getElementById(id);
 
-  function typeFilter(itemtype) {
-    return function(node) {
-      return node.attributes &&
-        node.attributes.itemtype &&
-        node.attributes.itemtype.value.trim() === itemtype;
-    };
-  }
-
-  function parseNodes(nodes, filter) {
-    var f = filter || function() { return true; };
-
-    return nodes
-      .map( function(n) { return findRootItems(n).filter(f); })
-      .flatten()
-      .map(parseItem);
-  }
-
-  function parseMicrodata(html) {
-    if(arguments.length === 1) {
-
-      if(Array.isArray(html)) {
-        return parseNodes(html);
-      } else {
-        return parseNodes([html]);
+      if (ref === undefined || ref === null) {
+        console.error(`itemref not found for id "${id}"`);
       }
 
-    } else if(arguments.length === 2) {
-      var itemtype = arguments[0];
-      var nodes = arguments[1];
-
-      if(Array.isArray(nodes)) {
-        return parseNodes(nodes, typeFilter(itemtype));
-      } else {
-        return parseNodes([nodes], typeFilter(itemtype));
-      }
+      return ref;
+    });
+    if (refs) {
+      return (refs.filter(refIsValid)) as Element[];
     }
   }
+  return [];
+}
 
-  return parseMicrodata;
-}));
+function parseItem(node: Element) {
+  const nodes = [node].concat(resolveReferences(node));
+  const properties = findProperties(nodes);
+  return parseProperties(properties, node);
+}
+
+function areNotProperties(node: Element) {
+  return !node.hasAttribute('itemprop');
+}
+
+function findRootItems(node: Element) {
+  const items = toArray(node.querySelectorAll('[itemscope]'));
+
+  if (node.hasAttribute('itemscope')) {
+    items.push(node);
+  }
+
+  return items.filter(areNotProperties);
+}
+
+function typeFilter(itemtype: string) {
+  return (node: Element) => node.getAttribute('itemtype')?.trim() === itemtype;
+}
+
+type Filter = (node: Element) => boolean;
+
+function parseNodes(nodes: Element[], filter: Filter = () => true) {
+  return nodes
+    .map((n) => findRootItems(n).filter(filter))
+    .flat()
+    .map(parseItem);
+}
+
+export function parseMicrodata(html: Element | Element[], itemtype?: string): Microdata[] {
+  let filter: Filter | undefined;
+  if (itemtype) {
+    filter = typeFilter(itemtype);
+  }
+  if (Array.isArray(html)) {
+    return parseNodes(html, filter);
+  }
+  return parseNodes([html], filter);
+}
