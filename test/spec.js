@@ -8,7 +8,7 @@
 
 var chai       = require('chai'),
     expect     = chai.expect,
-    microtesia = require('../lib/microtesia.js'),
+    microtesia = require('../lib/microtesia.cjs'),
     jsdom      = require('jsdom'),
     { JSDOM }  = jsdom;
 
