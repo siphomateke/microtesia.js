@@ -143,11 +143,13 @@ function areNotProperties(node: Element) {
   return !node.hasAttribute('itemprop');
 }
 
-function findRootItems(node: Element) {
-  const items = toArray(node.querySelectorAll('[itemscope]'));
+function findRootItems(node: HTMLDocument | Element) {
+  const convertedNode = node instanceof HTMLDocument ? node.documentElement : node;
 
-  if (node.hasAttribute('itemscope')) {
-    items.push(node);
+  const items = toArray(convertedNode.querySelectorAll('[itemscope]'));
+
+  if (convertedNode.hasAttribute('itemscope')) {
+    items.push(convertedNode);
   }
 
   return items.filter(areNotProperties);
@@ -159,14 +161,14 @@ function typeFilter(itemtype: string) {
 
 type Filter = (node: Element) => boolean;
 
-function parseNodes(nodes: Element[], filter: Filter = () => true) {
+function parseNodes(nodes: Array<HTMLDocument | Element>, filter: Filter = () => true) {
   return nodes
     .map((n) => findRootItems(n).filter(filter))
     .flat()
     .map(parseItem);
 }
 
-export function parseMicrodata(html: Element | Element[], itemtype?: string): Microdata[] {
+export function parseMicrodata<T extends HTMLDocument | Element>(html: T | T[], itemtype?: string): Microdata[] {
   let filter: Filter | undefined;
   if (itemtype) {
     filter = typeFilter(itemtype);
