@@ -3,7 +3,7 @@
 
 export interface Microdata {
   '_type'?: string;
-  [key: string]: Microdata | string | undefined;
+  [key: string]: Microdata | string | Array<Microdata | string> | undefined;
 }
 
 class MicrodataItem {
